@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
     Output:
         Results: Pandas DataFrame
 """
-def querying(bqClient, parameterFirstDate, parameterLastDate):
+def querying(bqClient, parameterFirstDate):
 
     controlTable = pd.read_csv("controlTable.csv")
 
@@ -52,41 +52,29 @@ def querying(bqClient, parameterFirstDate, parameterLastDate):
         , UNNEST(hits) AS hits
         , UNNEST(hits.product) AS product
       WHERE
-        _TABLE_SUFFIX BETWEEN 'TO_REPLACE_BY_PARAMETER_FIRSTDATE' AND 'TO_REPLACE_BY_PARAMETER_LASTDATE'
-    """.replace("TO_REPLACE_BY_PARAMETER_FIRSTDATE", parameterFirstDate).replace("TO_REPLACE_BY_PARAMETER_LASTDATE",
-                                                                                 parameterLastDate)
-    """Calculate dategap"""
-    d1 = datetime.strptime(parameterFirstDate, "%Y%m%d")
-    d2 = datetime.strptime(parameterLastDate, "%Y%m%d")
-    delta = d2 - d1
-    dategap = []
+        _TABLE_SUFFIX = 'TO_REPLACE_BY_PARAMETER_FIRSTDATE'
+    """.replace("TO_REPLACE_BY_PARAMETER_FIRSTDATE", parameterFirstDate)
 
-    for i in range(delta.days + 1):
-        day = d1 + timedelta(days=i)
-        dategap.append(day)
 
     last_row = controlTable.size
-#= 'TO_REPLACE_BY_PARAMETER_DATE'
+
     try:
         query_sessions = bqClient.query(queryString)
         results = pd.DataFrame(query_sessions.result().to_dataframe())
         if(results.size == 0):
             print("No new data.")
-            for date in dategap:
-                controlTable.loc[last_row] = [date.strftime("%Y%m%d"), "OK"]
-                last_row += 1
+            controlTable.loc[last_row] = [parameterFirstDate, "OK", "NOK"]
+            last_row += 1
             controlTable.to_csv("controlTable.csv", index=False)
             return False
         else:
-            for date in dategap:
-                controlTable.loc[last_row] = [date.strftime("%Y%m%d"), "OK"]
-                last_row += 1
+            controlTable.loc[last_row] = [parameterFirstDate, "OK", "NOK"]
+            last_row += 1
             controlTable.to_csv("controlTable.csv", index=False)
             return results
     except:
         print("Ups. Something went wrong")
-        for date in dategap:
-            controlTable.loc[last_row] = [date.strftime("%Y%m%d"), "NOK"]
-            last_row+=1
+        controlTable.loc[last_row] = [parameterFirstDate, "NOK", "NOK"]
+        last_row+=1
         controlTable.to_csv("controlTable.csv", index=False)
         return False
