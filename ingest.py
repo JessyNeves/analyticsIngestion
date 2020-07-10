@@ -40,12 +40,12 @@ results = preprocess(results)
 controlTable = pd.read_csv("controlTable.csv")
 
 """Concat fetched data to general"""
-if not (path.exists("imported-data/sessions.parquet")):
-    results.to_parquet("imported-data/sessions.parquet")
+if not (path.exists("sessions.parquet")):
+    results.to_parquet("sessions.parquet")
     controlTable.loc[controlTable["ImportDate"] == int(parameterFirstDate), ["ParquetWritten"]] = "OK"
     controlTable.to_csv("controlTable.csv", index=False)
 else:
     """"Concat new data"""
-    pd.concat([results, pd.read_parquet("imported-data/sessions.parquet")]).to_parquet("imported-data/sessions.parquet")
+    pd.concat([results, pd.read_parquet("sessions.parquet")]).to_parquet("sessions.parquet")
     controlTable.loc[controlTable["ImportDate"] == int(parameterFirstDate), ["ParquetWritten"]] = "OK"
     controlTable.to_csv("controlTable.csv", index=False)
